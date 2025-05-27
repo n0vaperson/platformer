@@ -211,6 +211,8 @@ public class Level {
 	// Your code goes here!
 	// Please make sure you read the rubric/directions carefully and implement the
 	// solution recursively!
+	//Preconditions: col and row are on the map, map is not null, fullness is not null
+	//Postconditions: The correct fullness level of water appears on the map for each block where water is supposed to be
 	private void water(int col, int row, Map map, int fullness) {
 		//creates water tile with the if statements determining what fullness the water is
 		Water w = new Water (col, row, tileSize, tileset.getImage("Falling_water"), this, fullness);;
