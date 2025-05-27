@@ -212,6 +212,7 @@ public class Level {
 	// Please make sure you read the rubric/directions carefully and implement the
 	// solution recursively!
 	private void water(int col, int row, Map map, int fullness) {
+		//creates water tile with the if statements determining what fullness the water is
 		Water w = new Water (col, row, tileSize, tileset.getImage("Falling_water"), this, fullness);;
 		if (fullness==3){
 		w= new Water (col, row, tileSize, tileset.getImage("Full_water"), this, fullness);
@@ -222,23 +223,34 @@ public class Level {
 		if (fullness==1){
 		 w = new Water (col, row, tileSize, tileset.getImage("Quarter_water"), this, fullness);
 		}
+		//adds the water tile to the map
 		map.addTile(col, row, w);
 
-                       //check if we can go down
+        //check if the block 2 tiles below is solid to see if falling water should be full
 		if(row+2 < map.getTiles()[0].length && !(map.getTiles()[col][row+1] instanceof Water) && map.getTiles()[col][row+2].isSolid() && !map.getTiles()[col][row+1].isSolid()) {
 			water(col, row+1, map, 3);
 		}
 
+		//check if water can go down in regular falling water, as opposed to a solid block
 		else if(row+1 < map.getTiles()[0].length && !(map.getTiles()[col][row+1] instanceof Water) && !map.getTiles()[col][row+1].isSolid() && map.getTiles()[col][row] instanceof Water) {
 			water(col, row+1, map, 0);
 		}
-                     //if we can’t go down go left and right
-		//right
-		else if(fullness>1){
+        
+		
+		else if(fullness>=1){
+			//checks to see if the water can flow right
+			if (fullness==1 && col+1 < map.getTiles().length && !(map.getTiles()[col+1][row] instanceof Water) && !map.getTiles()[col+1][row].isSolid()){
+				water(col+1, row, map, fullness);
+			}
 			if(col+1 < map.getTiles().length && !(map.getTiles()[col+1][row] instanceof Water) && !map.getTiles()[col+1][row].isSolid()) {
 				water(col+1, row, map, fullness-1);
 			}
-			//left
+
+			//checks to see if the water can flow left
+			if (fullness==1 && col-1 >= 0 && !(map.getTiles()[col-1][row] instanceof Water) && !map.getTiles()[col-1][row].isSolid()){
+				water(col-1, row, map, fullness);
+			}
+			
 			if(col-1 >= 0 && !(map.getTiles()[col-1][row] instanceof Water) && !map.getTiles()[col-1][row].isSolid()) {
 				water(col-1, row, map, fullness-1);
 		}
