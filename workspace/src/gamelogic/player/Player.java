@@ -14,6 +14,7 @@ public class Player extends PhysicsObject{
 	public float walkSpeed = 400;
 	public float jumpPower = 1350;
 
+	////IMPORTANTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 	private boolean isJumping = false;
 
 	public Player(float x, float y, Level level) {

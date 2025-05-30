@@ -35,6 +35,7 @@ public class Level {
 
 	private ArrayList<Enemy> enemiesList = new ArrayList<>();
 	private ArrayList<Flower> flowers = new ArrayList<>();
+	private ArrayList<Water> waters = new ArrayList<>();
 
 	private List<PlayerDieListener> dieListeners = new ArrayList<>();
 	private List<PlayerWinListener> winListeners = new ArrayList<>();
@@ -111,14 +112,19 @@ public class Level {
 					tiles[x][y] = new Gas(xPosition, yPosition, tileSize, tileset.getImage("GasTwo"), this, 2);
 				else if (values[x][y] == 17)
 					tiles[x][y] = new Gas(xPosition, yPosition, tileSize, tileset.getImage("GasThree"), this, 3);
-				else if (values[x][y] == 18)
+				else if (values[x][y] == 18) {
 					tiles[x][y] = new Water(xPosition, yPosition, tileSize, tileset.getImage("Falling_water"), this, 0);
-				else if (values[x][y] == 19)
+					waters.add((Water) tiles[x][y]);
+				} else if (values[x][y] == 19) {
 					tiles[x][y] = new Water(xPosition, yPosition, tileSize, tileset.getImage("Full_water"), this, 3);
-				else if (values[x][y] == 20)
+					waters.add((Water) tiles[x][y]);
+				} else if (values[x][y] == 20) {
 					tiles[x][y] = new Water(xPosition, yPosition, tileSize, tileset.getImage("Half_water"), this, 2);
-				else if (values[x][y] == 21)
+					waters.add((Water) tiles[x][y]);
+				} else if (values[x][y] == 21) {
 					tiles[x][y] = new Water(xPosition, yPosition, tileSize, tileset.getImage("Quarter_water"), this, 1);
+					waters.add((Water) tiles[x][y]);
+				}
 			}
 
 		}
@@ -170,26 +176,18 @@ public class Level {
 				if (flowers.get(i).getHitbox().isIntersecting(player.getHitbox())) {
 					if (flowers.get(i).getType() == 1)
 						water(flowers.get(i).getCol(), flowers.get(i).getRow(), map, 3);
-					// else
-					// addGas(flowers.get(i).getCol(), flowers.get(i).getRow(), map, 9, new
-					// ArrayList<Gas>());
+					else
+						addGas(flowers.get(i).getCol(), flowers.get(i).getRow(), map, 20, new ArrayList<Gas>());
 					flowers.remove(i);
 					i--;
 				}
 			}
 
-			// addGas function implement this
-
-			// private void addGas(int col, int row, Map map, int numSquaresToFill,
-			// ArrayList<Gas> placedThisRound) {
-			// Gas g = new Gas (0, 0, tileSize, tileset.getImage("GasOne"), this, 0);
-			// map.addTile(col, row, g);
-			// placedThisRound.add(g);
-			// numSquaresToFill--;
-			// while (placedThisRound.size()>0 && numSquaresToFill>0){
-
-			// }
-			// }
+			for (Water w : waters) {
+				if (w.getHitbox().isIntersecting(player.getHitbox())) {
+					System.out.println("touching water");
+				}
+			}
 
 			// Update the enemies
 			for (int i = 0; i < enemies.length; i++) {
@@ -207,58 +205,108 @@ public class Level {
 		}
 	}
 
+	//Precondition: col, row, map, numSquaresToFill, and placedThisRound should be not null and col, row, and numSquaresToFill have to be greater than or equal to 0
+	//Postcondition: Gas blocks are placed in the appropriate place, in the appropriate quantity, and spread out in the appropriate way.
+	private void addGas(int col, int row, Map map, int numSquaresToFill, ArrayList<Gas> placedThisRound) {
+		//adding gas tile to the map and updating arraylist and count
+		Gas g = new Gas(col, row, tileSize, tileset.getImage("GasOne"), this, 0);
+		map.addTile(col, row, g);
+		placedThisRound.add(g);
+		numSquaresToFill--;
+
+		//while loop to continously place blocks until conditions are met
+		while (placedThisRound.size() > 0 && numSquaresToFill > 0) {
+			row = placedThisRound.get(0).getRow();
+			col = placedThisRound.get(0).getCol();
+			placedThisRound.remove(0);
+
+			for (int j = -1; j < 2; j++) {
+				for (int i = 0; i >= -1 ; i-=2) {
+					//checks in bounds in ALL directions as well as solid blocks
+					if (numSquaresToFill > 0 && col + i < map.getTiles().length && col + i > 0 && row + j < map.getTiles()[0].length && row + j > 0 && !map.getTiles()[col + i][row+j].isSolid() && !(map.getTiles()[col + i][row+j] instanceof Gas)) {
+						Gas u = new Gas(col + i, row+j, tileSize, tileset.getImage("GasOne"), this, 0);
+						map.addTile(col + i, row+j, u);
+						placedThisRound.add(u);
+						numSquaresToFill--;
+
+					}
+					//if statement makes the pattern go from top to top right and then top left
+					if (i == 0) {
+						i = i + 3;
+					}
+				}
+			}
+		}
+	}
+
 	// #############################################################################################################
 	// Your code goes here!
 	// Please make sure you read the rubric/directions carefully and implement the
 	// solution recursively!
-	//Preconditions: col and row are on the map, map is not null, fullness is not null
-	//Postconditions: The correct fullness level of water appears on the map for each block where water is supposed to be
+	// Preconditions: col and row are on the map, map is not null, fullness is not
+	// null
+	// Postconditions: The correct fullness level of water appears on the map for
+	// each block where water is supposed to be
 	private void water(int col, int row, Map map, int fullness) {
-		//creates water tile with the if statements determining what fullness the water is
-		Water w = new Water (col, row, tileSize, tileset.getImage("Falling_water"), this, fullness);;
-		if (fullness==3){
-		w= new Water (col, row, tileSize, tileset.getImage("Full_water"), this, fullness);
+		// creates water tile with the if statements determining what fullness the water
+		// is
+		Water w = new Water(col, row, tileSize, tileset.getImage("Falling_water"), this, fullness);
+		;
+		if (fullness == 3) {
+			w = new Water(col, row, tileSize, tileset.getImage("Full_water"), this, fullness);
 		}
-		if (fullness==2){
-		 w = new Water (col, row, tileSize, tileset.getImage("Half_water"), this, fullness);
+		if (fullness == 2) {
+			w = new Water(col, row, tileSize, tileset.getImage("Half_water"), this, fullness);
 		}
-		if (fullness==1){
-		 w = new Water (col, row, tileSize, tileset.getImage("Quarter_water"), this, fullness);
+		if (fullness == 1) {
+			w = new Water(col, row, tileSize, tileset.getImage("Quarter_water"), this, fullness);
 		}
-		//adds the water tile to the map
+		// adds the water tile to the map
 		map.addTile(col, row, w);
 
-        //check if the block 2 tiles below is solid to see if falling water should be full
-		if(row+2 < map.getTiles()[0].length && !(map.getTiles()[col][row+1] instanceof Water) && map.getTiles()[col][row+2].isSolid() && !map.getTiles()[col][row+1].isSolid()) {
-			water(col, row+1, map, 3);
+		// check if the block 2 tiles below is solid to see if falling water should be
+		// full
+		if (row + 2 < map.getTiles()[0].length && !(map.getTiles()[col][row + 1] instanceof Water)
+				&& map.getTiles()[col][row + 2].isSolid() && !map.getTiles()[col][row + 1].isSolid()) {
+			water(col, row + 1, map, 3);
+			waters.add(w);
 		}
 
-		//check if water can go down in regular falling water, as opposed to a solid block
-		else if(row+1 < map.getTiles()[0].length && !(map.getTiles()[col][row+1] instanceof Water) && !map.getTiles()[col][row+1].isSolid() && map.getTiles()[col][row] instanceof Water) {
-			water(col, row+1, map, 0);
+		// check if water can go down in regular falling water, as opposed to a solid
+		// block
+		else if (row + 1 < map.getTiles()[0].length && !(map.getTiles()[col][row + 1] instanceof Water)
+				&& !map.getTiles()[col][row + 1].isSolid() && map.getTiles()[col][row] instanceof Water) {
+			water(col, row + 1, map, 0);
+			waters.add(w);
 		}
-        
-		
-		else if(fullness>=1){
-			//checks to see if the water can flow right
-			if (fullness==1 && col+1 < map.getTiles().length && !(map.getTiles()[col+1][row] instanceof Water) && !map.getTiles()[col+1][row].isSolid()){
-				water(col+1, row, map, fullness);
+
+		else if (fullness >= 1) {
+			// checks to see if the water can flow right
+			if (fullness == 1 && col + 1 < map.getTiles().length && !(map.getTiles()[col + 1][row] instanceof Water)
+					&& !map.getTiles()[col + 1][row].isSolid()) {
+				water(col + 1, row, map, fullness);
+				waters.add(w);
 			}
-			if(col+1 < map.getTiles().length && !(map.getTiles()[col+1][row] instanceof Water) && !map.getTiles()[col+1][row].isSolid()) {
-				water(col+1, row, map, fullness-1);
+			if (col + 1 < map.getTiles().length && !(map.getTiles()[col + 1][row] instanceof Water)
+					&& !map.getTiles()[col + 1][row].isSolid()) {
+				water(col + 1, row, map, fullness - 1);
+				waters.add(w);
 			}
 
-			//checks to see if the water can flow left
-			if (fullness==1 && col-1 >= 0 && !(map.getTiles()[col-1][row] instanceof Water) && !map.getTiles()[col-1][row].isSolid()){
-				water(col-1, row, map, fullness);
+			// checks to see if the water can flow left
+			if (fullness == 1 && col - 1 >= 0 && !(map.getTiles()[col - 1][row] instanceof Water)
+					&& !map.getTiles()[col - 1][row].isSolid()) {
+				water(col - 1, row, map, fullness);
+				waters.add(w);
 			}
-			
-			if(col-1 >= 0 && !(map.getTiles()[col-1][row] instanceof Water) && !map.getTiles()[col-1][row].isSolid()) {
-				water(col-1, row, map, fullness-1);
+
+			if (col - 1 >= 0 && !(map.getTiles()[col - 1][row] instanceof Water)
+					&& !map.getTiles()[col - 1][row].isSolid()) {
+				water(col - 1, row, map, fullness - 1);
+				waters.add(w);
+			}
 		}
 	}
-	}
-	
 
 	public void draw(Graphics g) {
 		g.translate((int) -camera.getX(), (int) -camera.getY());
