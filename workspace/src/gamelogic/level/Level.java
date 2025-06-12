@@ -36,6 +36,7 @@ public class Level {
 	private ArrayList<Enemy> enemiesList = new ArrayList<>();
 	private ArrayList<Flower> flowers = new ArrayList<>();
 	private ArrayList<Water> waters = new ArrayList<>();
+	private ArrayList<Gas> gases = new ArrayList<>();
 
 	private List<PlayerDieListener> dieListeners = new ArrayList<>();
 	private List<PlayerWinListener> winListeners = new ArrayList<>();
@@ -46,6 +47,11 @@ public class Level {
 	private int tileSize;
 	private Tileset tileset;
 	public static float GRAVITY = 70;
+	private long timeInWater;
+	private boolean touchingGas = false;
+	private long secretImageTimer=0;
+	private boolean showSecImg = true;
+
 
 	public Level(LevelData leveldata) {
 		this.leveldata = leveldata;
@@ -61,9 +67,11 @@ public class Level {
 	}
 
 	public void restartLevel() {
+		waters.clear();
+		gases.clear();
 		int[][] values = mapdata.getValues();
 		Tile[][] tiles = new Tile[width][height];
-
+		timeInWater = 0;
 		for (int x = 0; x < width; x++) {
 			int xPosition = x;
 			for (int y = 0; y < height; y++) {
@@ -125,6 +133,7 @@ public class Level {
 					tiles[x][y] = new Water(xPosition, yPosition, tileSize, tileset.getImage("Quarter_water"), this, 1);
 					waters.add((Water) tiles[x][y]);
 				}
+
 			}
 
 		}
@@ -142,6 +151,9 @@ public class Level {
 		playerDead = false;
 		playerWin = false;
 	}
+
+	
+
 
 	public void onPlayerDeath() {
 		active = false;
@@ -183,12 +195,38 @@ public class Level {
 				}
 			}
 
+			//checking to see if the player is in water for more than five seconds
+			boolean touchingWater = false;
 			for (Water w : waters) {
 				if (w.getHitbox().isIntersecting(player.getHitbox())) {
-					System.out.println("touching water");
+					touchingWater = true;
+				
+			}
+			}
+			if(touchingWater){
+				if(timeInWater != 0 && System.currentTimeMillis() - timeInWater> 5000){
+					//killing player if they spend more than five seconds in water
+					onPlayerDeath();
+				}
+				else if (timeInWater == 0){
+					timeInWater = System.currentTimeMillis();
 				}
 			}
-
+			else{
+				timeInWater = 0;
+			}
+			boolean touchingGasThisRound = false;
+			//checking if the player is in gas
+			for (Gas g : gases) {
+				if (g.getHitbox().isIntersecting(player.getHitbox())) {
+					touchingGas = true;
+					touchingGasThisRound = true;
+				}
+			}
+			
+			if(!touchingGasThisRound){
+				touchingGas= false;
+			}
 			// Update the enemies
 			for (int i = 0; i < enemies.length; i++) {
 				enemies[i].update(tslf);
@@ -197,6 +235,16 @@ public class Level {
 				}
 			}
 
+
+		if(touchingGas){
+			if (secretImageTimer == 0 && Math.random()<.0015){
+				secretImageTimer = System.currentTimeMillis();
+			}
+		}
+
+		//if (!touchingGas){
+		//showSecImg = true;
+		//}
 			// Update the map
 			map.update(tslf);
 
@@ -204,6 +252,9 @@ public class Level {
 			camera.update(tslf);
 		}
 	}
+
+		
+	
 
 	//Precondition: col, row, map, numSquaresToFill, and placedThisRound should be not null and col, row, and numSquaresToFill have to be greater than or equal to 0
 	//Postcondition: Gas blocks are placed in the appropriate place, in the appropriate quantity, and spread out in the appropriate way.
@@ -225,6 +276,7 @@ public class Level {
 					//checks in bounds in ALL directions as well as solid blocks
 					if (numSquaresToFill > 0 && col + i < map.getTiles().length && col + i > 0 && row + j < map.getTiles()[0].length && row + j > 0 && !map.getTiles()[col + i][row+j].isSolid() && !(map.getTiles()[col + i][row+j] instanceof Gas)) {
 						Gas u = new Gas(col + i, row+j, tileSize, tileset.getImage("GasOne"), this, 0);
+						gases.add(u);
 						map.addTile(col + i, row+j, u);
 						placedThisRound.add(u);
 						numSquaresToFill--;
@@ -307,10 +359,9 @@ public class Level {
 			}
 		}
 	}
-
 	public void draw(Graphics g) {
 		g.translate((int) -camera.getX(), (int) -camera.getY());
-		// Draw the map
+		//draw the map
 		for (int x = 0; x < map.getWidth(); x++) {
 			for (int y = 0; y < map.getHeight(); y++) {
 				Tile tile = map.getTiles()[x][y];
@@ -346,6 +397,15 @@ public class Level {
 					tile.draw(g);
 			}
 		}
+
+		if(secretImageTimer>0){
+			//draw
+			g.drawImage(GameResources.secretImage, (int)(camera.getX()), (int)(camera.getY()), null);
+			if(System.currentTimeMillis()-secretImageTimer>2000){
+				secretImageTimer = 0;
+			}
+		}
+
 
 		// Draw the enemies
 		for (int i = 0; i < enemies.length; i++) {
